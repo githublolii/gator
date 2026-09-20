@@ -1,5 +1,5 @@
 import { markFeedFetched, getNextFeedToFetch } from "./lib/db/queries/feeds.js";
-import { createPost, getPostsForUser } from "./lib/db/queries/posts.js";
+import { getPostsForUser, createPost, searchPosts, addBookmark, getBookmarksForUser } from "./lib/db/queries/posts.js";
 import { setUser, readConfig } from "./config";
 import {
   createUser,
@@ -301,6 +301,43 @@ async function handlerBrowse(cmdName: string, user: User, ...args: string[]): Pr
     }
     console.log(`Published: ${p.publishedAt ?? "N/A"}`);
     console.log("");
+  }
+}
+
+
+async function handlerSearch(cmdName: string, ...args: string[]): Promise<void> {
+  if (args.length < 1) {
+    throw new Error("usage: search <query>");
+  }
+  const query = args.join(" ");
+  const results = await searchPosts(query, 5);
+  console.log(`Found ${results.length} posts matching "${query}":\n`);
+  for (const p of results) {
+    console.log(`ID: ${p.id}`);
+    console.log(`Title: ${p.title}`);
+    console.log(`URL: ${p.url}`);
+    console.log("");
+  }
+}
+
+async function handlerBookmark(cmdName: string, user: User, ...args: string[]): Promise<void> {
+  if (args.length < 1) {
+    throw new Error("usage: bookmark <post_id>");
+  }
+  const postId = args[0];
+  await addBookmark(user.id, postId);
+  console.log(`Successfully bookmarked post ${postId}!`);
+}
+
+async function handlerListBookmarks(cmdName: string, user: User, ...args: string[]): Promise<void> {
+  const bms = await getBookmarksForUser(user.id);
+  console.log(`You have ${bms.length} saved bookmarks:\n`);
+  for (const b of bms) {
+    console.log(`Post ID: ${b.postId}`);
+    console.log(`Title: ${b.title}`);
+    console.log(`URL: ${b.url}`);
+    console.log(`Saved at: ${b.savedAt}`);
+    console.log("-----------------------------------------");
   }
 }
 
